@@ -55,7 +55,7 @@ app.post("/",(req,res)=>{
     }else{
         res.json({
             "status":"error",
-            "error":"la accion establecida no esta disponible o "
+            "error":"la accion establecida no esta disponible"
         })
     }
 })
