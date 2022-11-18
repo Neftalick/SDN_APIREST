@@ -5,6 +5,7 @@ const bodyParser = require("body-parser")
 const pool = require("./pools")
 const e = require('express')
 const SHA512 = require("js-sha512").sha512
+const http = require('http')
 
 //Obtenemos constante a partir de variables de entorno para aumentar la seguridad del servicio y realizamos las congifuraciones correspondientes
 dotenv.config()
@@ -14,6 +15,34 @@ app.set('trust proxy', true)
 const pool_para_autenticar = pool.pool1
 const pool_usuarios_autenticados = pool.pool2
 const pool_servicios = pool.pool3
+
+// Función para obtener el Switch DPID
+
+function obtenerDPID(ip){
+    const controller_IP = "10.0.0.1"
+    const uri = "/wm/device/"
+
+    http.get('http://'+controller_IP+':8080'+uri+'?ipv4='+ip, res => {
+        let data = ''
+
+        // called when a data chunk is received.
+        res.on('data', chunk => {
+            data += chunk
+        })
+
+        // called when the complete response is received.
+        res.on('end', () => {
+            let resJSON = JSON.parse(data)
+            console.log(resJSON)
+            let dpid = resJSON["switch"]["dpid"]
+            console.log("Es esta la DPID? " + dpid)
+        })
+    })
+    .on('error', err => {
+        console.log('Error: ', err.message)
+    })
+}
+
 
 //Solo expondremos un endpoint
 app.post("/",(req,res)=>{
