@@ -115,7 +115,7 @@ app.post("/",(req,res)=>{
                     })
                 }
                 break
-            case "sign out":
+            case "sign":
                 
                 break
             //Pensaba que el administrador mande sus credenciales cada vez que desee 
