@@ -158,7 +158,53 @@ app.post("/",(req,res)=>{
                 }
                 break
             case "sign out":
-                
+                if(req.body.user!=null){
+                    pool_para_autenticar.query(`SELECT * FROM usuarios_autenticados.usuario_autenticado where idUsuario_Autenticado = "${req.body.user}"`,(err,result,fields)=>{
+                        if(err == null){
+                            if(result.length != 0){
+                                    pool_usuarios_autenticados.query(`DELETE FROM usuarios_autenticados.usuario_autenticado WHERE idUsuario_Autenticado = "${req.body.user}"`,(err2,result2,fields2)=>{
+                                        if(err2 == null){
+                                            pool_usuarios_autenticados.query(`DELETE FROM usuarios_autenticados.dispositivo WHERE dispositivo_MAC = "${result.Dispositivo_dispositivo_MAC}"`,(err3,results3,fields3)=>{
+                                                if(err3 == null){
+                                                    res.json({
+                                                        "status":"OK"
+                                                    })
+                                                }else{
+                                                    res.json({
+                                                        "status":"error",
+                                                        "error":err3
+                                                    })
+                                                }
+                                            })
+                                        }else{
+                                            console.log("aqui")
+                                            res.json({
+                                                "status":"error",
+                                                "error":err2
+                                            })
+                                        }
+                                    })
+                            }else{
+                                res.json({
+                                    "status":"error",
+                                    "error":"El usuario no existe o no esta habilitado"
+                                })
+                            }
+                        }else{
+                            res.json(
+                                {
+                                    "status":"error",
+                                    "error":err
+                                }
+                            )
+                        }
+                    })
+                } else {
+                    res.json({
+                        "status":"error",
+                        "error":"debe ingresar el usuario que debe desloguearse"
+                    })
+                }
                 break
             //Pensaba que el administrador mande sus credenciales cada vez que desee 
         }
