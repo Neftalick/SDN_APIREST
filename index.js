@@ -164,7 +164,8 @@ app.post("/",(req,res)=>{
                             if(result.length != 0){
                                     pool_usuarios_autenticados.query(`DELETE FROM usuarios_autenticados.usuario_autenticado WHERE idUsuario_Autenticado = "${req.body.user}"`,(err2,result2,fields2)=>{
                                         if(err2 == null){
-                                            pool_usuarios_autenticados.query(`DELETE FROM usuarios_autenticados.dispositivo WHERE dispositivo_MAC = "${result.Dispositivo_dispositivo_MAC}"`,(err3,results3,fields3)=>{
+                                            console.log(result)
+                                            pool_usuarios_autenticados.query(`DELETE FROM usuarios_autenticados.dispositivo WHERE dispositivo_MAC = "${result[0]["Dispositivo_dispositivo_MAC"]}"`,(err3,results3,fields3)=>{
                                                 if(err3 == null){
                                                     res.json({
                                                         "status":"OK"
