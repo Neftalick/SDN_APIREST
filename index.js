@@ -22,6 +22,8 @@ function obtenerDPID(mac){
     const controller_IP = "localhost"
     const uri = "/wm/device/"
 
+    let dpid = null
+
     http.get('http://'+controller_IP+':8080'+uri+'?mac='+mac, res => {
         let data = ''
 
@@ -33,15 +35,17 @@ function obtenerDPID(mac){
         // called when the complete response is received.
         res.on('end', () => {
             let resJSON = JSON.parse(data)
-            console.log("RAW Data: ", data)
-            console.log("\n\nJSON Data: ", resJSON[0])
+            //console.log("RAW Data: ", data)
+            //console.log("\n\nJSON Data: ", resJSON[0])
+            //console.log("\n\nAP: ", resJSON[0].attachmentPoint)
+            //console.log("\n\nAP: ", resJSON[0].attachmentPoint[0].switchDPID)
 
-            if (resJSON.attachmentPoint !== undefined && resJSON.attachmentPoint.switchDPID !== undefined){
+            //if (resJSON.attachmentPoint !== undefined && resJSON.attachmentPoint[0].switchDPID !== undefined){
 
-                console.log("\n\nSwitchDPID: ", resJSON[0].attachmentPoint.switchDPID)
-                return resJSON[0].attachmentPoint.switchDPID
-            }
-            return null
+                console.log("\n\nSwitchDPID: ", resJSON[0].attachmentPoint[0].switchDPID)
+                dpid = resJSON[0].attachmentPoint[0].switchDPID
+                return dpid
+            //}
         })
     })
 }
@@ -51,7 +55,7 @@ app.get("/dpid",(req,res)=> {
 
     const mac = req.query.mac
     console.log("La MAC recibida fue:",mac)
-    res.send(obtenerDPID(mac))
+    res.json({"MAC": mac , "dpid" : obtenerDPID(mac)})
 })
 
 //Solo expondremos un endpoint para el reqerimiento 1
