@@ -18,11 +18,11 @@ const pool_servicios = pool.pool3
 
 // Función para obtener el Switch DPID
 
-function obtenerDPID(ip){
+function obtenerDPID(mac){
     const controller_IP = "localhost"
     const uri = "/wm/device/"
 
-    http.get('http://'+controller_IP+':8080'+uri+'?ipv4='+ip, res => {
+    http.get('http://'+controller_IP+':8080'+uri+'?mac='+mac, res => {
         let data = ''
 
         // called when a data chunk is received.
@@ -33,9 +33,7 @@ function obtenerDPID(ip){
         // called when the complete response is received.
         res.on('end', () => {
             let resJSON = JSON.parse(data)
-            console.log(resJSON)
-            let dpid = resJSON["switch"]["dpid"]
-            console.log("Es esta la DPID? " + dpid)
+            let dpid = resJSON["attachmentPoint"]["switchDPID"]
             return resJSON
         })
     })
@@ -46,10 +44,11 @@ function obtenerDPID(ip){
 }
 
 // Prueba DPID
-app.post("/dpid",(req,res)=> {
-    const ip = req.query.ip
+app.get("/dpid",(req,res)=> {
 
-    res.send(obtenerDPID(ip))
+    const mac = req.query.mac
+    console.log("La MAC recibida fue:",mac)
+    res.send(obtenerDPID(mac))
 })
 
 //Solo expondremos un endpoint para el reqerimiento 1
