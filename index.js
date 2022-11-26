@@ -307,8 +307,10 @@ app.get("/services",(req,res) => {
                 if(SHA512(req.body.password) == result[0]["password"]){
                     if (result[0]["nombreRol"] == "ADMIN"){
                         pool_servicios.query("SELECT * FROM servicios.servicio;",(err,result)=>{
+
                             if(err==null){
                                 if(result[0] != null){
+
                                     res.json({
                                         "status":"ok",
                                         "idServicio" : result[0],
@@ -318,6 +320,7 @@ app.get("/services",(req,res) => {
                                         "IP" : result[4],
                                         "MAC" : result[5]
                                     })
+                                    /* o es asi res.render({data:result})*/
                                 }else {
                                     res.json({
                                         "staus" : "not ok",
@@ -445,6 +448,51 @@ app.put("/services", (req,res) => {
 })
 
 app.delete("/services", (req,res) => {
+    if(req.body.user != null && req.body.password != null){
+        pool_para_autenticar.query(`SELECT * FROM usuarios_para_autenticar.usuario u
+                                                    inner join usuarios_para_autenticar.rol r on r.idROL = u.Rol_idRol
+                                                    inner join usuarios_para_autenticar.facultad f on f.idFacultad = u.Facultad_idFacultad
+                                                    where u.usuario = "${req.body.user}" and u.enable = 1;`,(err,result,fields) => {
+            if(err == null){
+                if(result.length != 0){
+                    if(SHA512(req.body.password) == result[0]["password"]){
+                        if(result[0]["nombreRol"] == "ADMIN"){
+                            if(req.body.nombre != null){
+                                pool_servicios.query(`DELETE FROM servicios.servicio WHERE (Nombre = "${req.body.user}");`,(err,re)=>{
+                                    if (err == null){
+                                        res.json({
+                                            "status" : "ok",
+                                            "msg" : "se elimino correctamente"
+                                        })
+                                    }else {
+                                        res.json({
+                                            "status" : "not_ok",
+                                            "msg" : "error interno"
+                                        })
+                                    }
+                                })
+
+                            }else {
+                                res.json({
+                                    "status" : "error",
+                                    "msg" : "ingrese la nombre del servicio"
+                                })
+
+
+                            }
+
+
+                            }
+
+                    }
+
+                }
+
+            }
+
+        })
+
+        }
 
 })
 /*
