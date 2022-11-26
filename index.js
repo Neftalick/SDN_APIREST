@@ -168,37 +168,61 @@ app.post("/",(req,res)=>{
                 }
                 break
             case "sign out":
-                if(req.body.user!=null){
-                    pool_para_autenticar.query(`SELECT * FROM usuarios_autenticados.usuario_autenticado where idUsuario_Autenticado = "${req.body.user}"`,(err,result,fields)=>{
+                if(req.body.password!=null && req.body.mac!=null && req.body.ip!=null){
+                    pool_para_autenticar.query(`SELECT * FROM usuarios_para_autenticar.usuario where password = "${req.body.password}"`,(err,result,fields)=>{
                         if(err == null){
                             if(result.length != 0){
-                                    pool_usuarios_autenticados.query(`DELETE FROM usuarios_autenticados.usuario_autenticado WHERE idUsuario_Autenticado = "${req.body.user}"`,(err2,result2,fields2)=>{
-                                        if(err2 == null){
-                                            console.log(result)
-                                            pool_usuarios_autenticados.query(`DELETE FROM usuarios_autenticados.dispositivo WHERE dispositivo_MAC = "${result[0]["Dispositivo_dispositivo_MAC"]}"`,(err3,results3,fields3)=>{
-                                                if(err3 == null){
-                                                    res.json({
-                                                        "status":"OK"
-                                                    })
-                                                }else{
-                                                    res.json({
-                                                        "status":"error",
-                                                        "error":err3
-                                                    })
-                                                }
-                                            })
-                                        }else{
-                                            console.log("aqui")
+                                pool_usuarios_autenticados.query(`SELECT FROM usuarios_autenticados.usuario_autenticado WHERE IP = "${req.body.ip}" and Dispositivo_dispositivo_MAC = "${req.body.mac}"`,(err10,result10,fields10)=>{
+                                    if (err10 == null) {
+                                        if (result.length != 0) {
+                                            if (result[0]["idUsuario"] == result10[0]["idUsuario_Autenticado"]) {
+                                                pool_usuarios_autenticados.query(`DELETE FROM usuarios_autenticados.usuario_autenticado WHERE idUsuario_Autenticado = "${req.body.user}"`,(err2,result2,fields2)=>{
+                                                    if(err2 == null){
+                                                        console.log(result)
+                                                        pool_usuarios_autenticados.query(`DELETE FROM usuarios_autenticados.dispositivo WHERE dispositivo_MAC = "${result[0]["Dispositivo_dispositivo_MAC"]}"`,(err3,results3,fields3)=>{
+                                                            if(err3 == null){
+                                                                res.json({
+                                                                    "status":"OK"
+                                                                })
+                                                            }else{
+                                                                res.json({
+                                                                    "status":"error",
+                                                                    "error":err3
+                                                                })
+                                                            }
+                                                        })
+                                                    }else{
+                                                        console.log("aqui")
+                                                        res.json({
+                                                            "status":"error",
+                                                            "error":err2
+                                                        })
+                                                    }
+                                                })
+                                            } else {
+                                                res.json({
+                                                    "status":"error",
+                                                    "error":"No se han encontrado coincidencias"
+                                                })
+                                            }
+                                        } else{
                                             res.json({
                                                 "status":"error",
-                                                "error":err2
+                                                "error":"El usuario autenticado no se ha encontrado"
                                             })
                                         }
-                                    })
+                                    } else{
+                                        console.log("aqui")
+                                        res.json({
+                                            "status":"error",
+                                            "error":err10
+                                        })
+                                    }
+                                })
                             }else{
                                 res.json({
                                     "status":"error",
-                                    "error":"El usuario no esta autenticado"
+                                    "error":"El usuario no se ha encontrado"
                                 })
                             }
                         }else{
@@ -210,11 +234,18 @@ app.post("/",(req,res)=>{
                             )
                         }
                     })
-                } else {
-                    res.json({
-                        "status":"error",
-                        "error":"debe ingresar el usuario que debe desloguearse"
-                    })
+                } else{
+                    if(req.body.help != null){
+                        res.json({
+                            "status":"OK",
+                            "msg":"Parametros requeridos -> password,ip,mac"
+                        })
+                    }else{
+                        res.json({
+                            "status":"error",
+                            "error":"debe ingresar contraseña"
+                        })
+                    }
                 }
                 break
             //Pensaba que el administrador mande sus credenciales cada vez que desee 
