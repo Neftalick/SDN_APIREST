@@ -257,6 +257,27 @@ app.post("/",(req,res)=>{
         })
     }
 })
+
+
+app.get("/services",(req,res) => {
+
+})
+
+app.post("/services",(req,res) => {
+
+})
+
+app.put("/services", (req,res) => {
+
+})
+
+app.delete("/services", (req,res) => {
+    
+})
+
+
+
+
 app.listen(process.env.PORT, ()=>{
     console.log(`Se levanto un servidor API-REST en el puerto ${process.env.PORT}`)
 })
