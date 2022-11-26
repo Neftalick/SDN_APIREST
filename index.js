@@ -16,33 +16,42 @@ const pool_para_autenticar = pool.pool1
 const pool_usuarios_autenticados = pool.pool2
 const pool_servicios = pool.pool3
 
-// Función para obtener el Switch DPID
+// Variables importantes
+const controller_IP = "localhost"
 
-function obtenerDPID(ip){
-    const controller_IP = "10.0.0.1"
-    const uri = "/wm/device/"
-
-    http.get('http://'+controller_IP+':8080'+uri+'?ipv4='+ip, res => {
-        let data = ''
-
-        // called when a data chunk is received.
-        res.on('data', chunk => {
-            data += chunk
-        })
-
-        // called when the complete response is received.
-        res.on('end', () => {
-            let resJSON = JSON.parse(data)
-            console.log(resJSON)
-            let dpid = resJSON["switch"]["dpid"]
-            console.log("Es esta la DPID? " + dpid)
-        })
-    })
-    .on('error', err => {
-        console.log('Error: ', err.message)
-    })
-}
-
+// Prueba DPID
+// app.get("/dpid",(req,response)=> {
+//
+//     const mac = req.query.mac
+//     console.log("La MAC recibida fue:",mac)
+//
+//     http.get('http://'+controller_IP+':8080'+uri+'?mac='+mac, res => {
+//         let data = ''
+//
+//         // called when a data chunk is received.
+//         res.on('data', chunk => {
+//             data += chunk
+//         })
+//
+//         // called when the complete response is received.
+//         res.on('end', () => {
+//             let resJSON = JSON.parse(data)
+//             //console.log("RAW Data: ", data)
+//             //console.log("\n\nJSON Data: ", resJSON[0])
+//             //console.log("\n\nAP: ", resJSON[0].attachmentPoint)
+//             //console.log("\n\nAP: ", resJSON[0].attachmentPoint[0].switchDPID)
+//             //if (resJSON.attachmentPoint !== undefined && resJSON.attachmentPoint[0].switchDPID !== undefined){
+//
+//             //console.log("\n\nSwitchDPID: ", resJSON[0].attachmentPoint[0].switchDPID)
+//             dpid = resJSON[0].attachmentPoint[0].switchDPID
+//             response.json({"MAC": mac , "dpid" : dpid})
+//             //}
+//         })
+//         res.on("error", (err) => {
+//             console.log("Error: ", err)
+//         })
+//     }).end()
+// })
 
 //Solo expondremos un endpoint para el reqerimiento 1
 app.post("/",(req,res)=>{
@@ -108,20 +117,48 @@ app.post("/",(req,res)=>{
                                                                         VALUES ("${req.body.mac}", "${req.body.mac}", 'computador')`,
                                         (err2,result2,fields2)=>{
                                             if(err2 == null){
-                                                pool_usuarios_autenticados.query(`INSERT INTO usuarios_autenticados.usuario_autenticado (idUsuario_Autenticado,Dispositivo_dispositivo_MAC,diferenciador,switch_MAC,IP,Facultad_facultad_ID,Rol_idROL) 
-                                                                                VALUES ("${req.body.user}","${req.body.mac}","0","00:00:00:00:01:01","${req.body.ip}","${result[0]["Facultad_idFacultad"]}","${result[0]["Rol_idRol"]}")`,
-                                                (err3,results3,fields3)=>{
-                                                    if(err3 == null){
-                                                        res.json({
-                                                            "status":"OK"
-                                                        })
-                                                    }else{
-                                                        res.json({
-                                                            "status":"error",
-                                                            "error":err3
-                                                        })
-                                                    }
-                                                })
+
+                                                // Se obtiene la DPID:
+                                                http.get('http://'+controller_IP+':8080/wm/device/?mac='+req.body.mac, response => {
+                                                    let data = ''
+
+                                                    // called when a data chunk is received.
+                                                    response.on('data', chunk => data += chunk )
+
+                                                    // called when the complete response is received.
+                                                    response.on('end', () => {
+                                                        let resJSON = JSON.parse(data)
+                                                        if (resJSON.attachmentPoint !== undefined && resJSON.attachmentPoint[0].switchDPID !== undefined){
+
+                                                            dpid = resJSON[0].attachmentPoint[0].switchDPID
+
+                                                            pool_usuarios_autenticados.query(`INSERT INTO usuarios_autenticados.usuario_autenticado (idUsuario_Autenticado,Dispositivo_dispositivo_MAC,diferenciador,switch_MAC,IP,Facultad_facultad_ID,Rol_idROL) 
+                                                                                VALUES ("${req.body.user}","${req.body.mac}","0","${dpid}","${req.body.ip}","${result[0]["Facultad_idFacultad"]}","${result[0]["Rol_idRol"]}")`,
+                                                                (err3,results3,fields3)=>{
+                                                                    if(err3 == null){
+                                                                        res.json({
+                                                                            "status":"OK"
+                                                                        })
+                                                                    }else{
+                                                                        res.json({
+                                                                            "status":"error",
+                                                                            "error":err3
+                                                                        })
+                                                                    }
+                                                                })
+                                                        }
+                                                        else {
+                                                            console.log("No se pudo obtener la DPID de la mac")
+                                                            res.json({
+                                                                "status":"error",
+                                                                "error": "No se pudo obtener la DPID del switch correspondiente a la MAC " + req.body.mac
+                                                            })
+                                                        }
+                                                    })
+                                                    response.on("error", (err) => {
+                                                        console.log("Error: ", err)
+                                                    })
+                                                }).end()
                                             }else{
                                                 console.log("aqui")
                                                 res.json({
