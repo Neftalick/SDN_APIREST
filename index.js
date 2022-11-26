@@ -19,7 +19,7 @@ const pool_servicios = pool.pool3
 // Función para obtener el Switch DPID
 
 function obtenerDPID(ip){
-    const controller_IP = "10.0.0.1"
+    const controller_IP = "localhost"
     const uri = "/wm/device/"
 
     http.get('http://'+controller_IP+':8080'+uri+'?ipv4='+ip, res => {
@@ -36,13 +36,21 @@ function obtenerDPID(ip){
             console.log(resJSON)
             let dpid = resJSON["switch"]["dpid"]
             console.log("Es esta la DPID? " + dpid)
+            return resJSON
         })
     })
     .on('error', err => {
         console.log('Error: ', err.message)
     })
+    return {"result": "Hubo un error"}
 }
 
+// Prueba DPID
+app.post("/dpid",(req,res)=> {
+    const ip = req.query.ip
+
+    res.send(obtenerDPID(ip))
+})
 
 //Solo expondremos un endpoint para el reqerimiento 1
 app.post("/",(req,res)=>{
