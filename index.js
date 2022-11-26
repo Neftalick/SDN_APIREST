@@ -33,14 +33,17 @@ function obtenerDPID(mac){
         // called when the complete response is received.
         res.on('end', () => {
             let resJSON = JSON.parse(data)
-            let dpid = resJSON["attachmentPoint"]["switchDPID"]
-            return resJSON
+            console.log("RAW Data: ", data)
+            console.log("\n\nJSON Data: ", resJSON[0])
+
+            if (resJSON.attachmentPoint !== undefined && resJSON.attachmentPoint.switchDPID !== undefined){
+
+                console.log("\n\nSwitchDPID: ", resJSON[0].attachmentPoint.switchDPID)
+                return resJSON[0].attachmentPoint.switchDPID
+            }
+            return null
         })
     })
-    .on('error', err => {
-        console.log('Error: ', err.message)
-    })
-    return {"result": "Hubo un error"}
 }
 
 // Prueba DPID
