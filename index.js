@@ -297,6 +297,54 @@ app.post("/",(req,res)=>{
 
 
 app.get("/services",(req,res) => {
+    if(req.body.user != null && req.body.password != null){
+        pool_para_autenticar.query(`SELECT * FROM usuarios_para_autenticar.usuario u
+                                                    inner join usuarios_para_autenticar.rol r on r.idROL = u.Rol_idRol
+                                                    inner join usuarios_para_autenticar.facultad f on f.idFacultad = u.Facultad_idFacultad
+                                                    where u.usuario = "${req.body.user}" and u.enable = 1;`,(err,result,fields) => {
+        if(err==null){
+            if(result.length !=0){
+                if(SHA512(req.body.password) == result[0]["password"]){
+                    if (result[0]["nombreRol"] == "ADMIN"){
+                        pool_servicios.query("SELECT * FROM servicios.servicio;",(err,result)=>{
+                            if(err==null){
+                                if(result[0] != null){
+                                    res.json({
+                                        "status":"ok",
+                                        "idServicio" : result[0],
+                                        "Nombre" : result[1],
+                                        "Puerto" : result[2],
+                                        "Protocolo" : result[3],
+                                        "IP" : result[4],
+                                        "MAC" : result[5]
+                                    })
+                                }else {
+                                    res.json({
+                                        "staus" : "not ok",
+                                        "msg" : "No se encontraron servicios, por favor agregar"
+                                    })
+                                }
+                            }else {
+                                res.json({
+                                    "status" : "error",
+                                    "error" : err
+                                })
+                            }
+                        })
+                    }
+
+                }
+            }
+        }else {
+            res.json({
+                "status" : "error",
+                "error" : err
+            })
+        }
+        })
+
+        }
+
 
 })
 
