@@ -264,7 +264,95 @@ app.get("/services",(req,res) => {
 })
 
 app.post("/services",(req,res) => {
-
+    //Veremos los parametros necesarios
+    //Se debe identificar el administrados para anadir servicios
+    if(req.body.user != null && req.body.password != null){
+        //validamos que sea el administrador
+        pool_para_autenticar.query(`SELECT * FROM usuarios_para_autenticar.usuario u
+                                                    inner join usuarios_para_autenticar.rol r on r.idROL = u.Rol_idRol
+                                                    inner join usuarios_para_autenticar.facultad f on f.idFacultad = u.Facultad_idFacultad
+                                                    where u.usuario = "${req.body.user}" and u.enable = 1;`,(err,result,fields) =>{
+            if(err == null){
+                if(result.length != 0){
+                    if(SHA512(req.body.password) == result[0]["password"]){
+                        //console.log(result[0])
+                        if(result[0]["nombreRol"] == "ADMIN"){
+                            if(req.body.servicio != null && req.body.puerto != null && req.body.protocolo != null && req.body.ip != null && req.body.mac != null && req.body.participantes != null){
+                                if(req.body.participantes.length != 0){
+                                    //Creamos los servicios
+                                    pool_servicios.query(`INSERT INTO servicios.servicio (Nombre,Puerto,Protocolo,IP,MAC) VALUES ("${req.body.servicio}","${req.body.puerto}","${req.body.protocolo}","${req.body.ip}","${req.body.mac}")`,(err,result,fields) =>{
+                                        id = result.insertId
+                                        if(err == null){
+                                            const usuariosNoValidos = []
+                                            req.body.participantes.forEach(usuarios => {
+                                                //usuarios["user"]
+                                                pool_servicios.query(`SELECT idParticipantes FROM servicios.participantes WHERE servicios.participantes.usuario = "${usuarios["user"]}"`,(err2,result2,fields2) =>{
+                                                    if(result != null){
+                                                        pool_servicios.query(`INSERT INTO servicios.servicio_has_participantes (Servicio_idServicio,Participantes_idParticipantes) VALUES ("${id}","${result2[0]["idParticipantes"]}")`)
+                                                    }else{
+                                                        usuariosNoValidos.push(usuarios["user"])
+                                                    }
+                                                })
+                                            })
+                                            if(usuariosNoValidos.length == 0){
+                                                res.json({
+                                                    "status":"OK"
+                                                })
+                                            }else{
+                                                res.status(401).json({
+                                                    "status":"error",
+                                                    "msg":"los siguientes usuarios no existen y no seran ingresados al servicio",
+                                                    "users":usuariosNoValidos
+                                                })
+                                            }
+                                        }else{
+                                            res.status(401).json({
+                                                "status":"error",
+                                                "msg":"error al crear el servicio validar todos los parametros"
+                                            })
+                                        }
+                                    })
+                                    req.body.participantes.forEach(element => {
+                                        //Anadimos los participantes con el ID del servicio creado
+                                    });
+                                }else{
+                                    res.status(401).json({
+                                        "status":"error",
+                                        "msg":"Los participantes no debe estar vacio"
+                                    })
+                                }
+                            }else{
+                                res.status(401).json({
+                                    "status":"error",
+                                    "msg":"Ingresa todos los parametros necesarios"
+                                })
+                            }
+                        }else{
+                            res.status(401).json({
+                                "status":"error",
+                                "msg":"El usuario ingresado no es un administrador"
+                            })
+                        }
+                    }else{
+                        res.status(401).json({
+                            "status":"error",
+                            "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+                        })
+                    }
+                }else{
+                    res.status(401).json({
+                        "status":"error",
+                        "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+                    })
+                }
+            }
+        })
+    }else{
+        res.status(401).json({
+            "status":"error",
+            "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+        })
+    }
 })
 
 app.put("/services", (req,res) => {
@@ -272,11 +360,15 @@ app.put("/services", (req,res) => {
 })
 
 app.delete("/services", (req,res) => {
-    
+
 })
-
-
-
+/*
+app.post("/prueba",(req,res)=>{
+    req.body.participantes.forEach(element => {
+        console.log(element["user"])
+    });
+})
+*/
 
 app.listen(process.env.PORT, ()=>{
     console.log(`Se levanto un servidor API-REST en el puerto ${process.env.PORT}`)
