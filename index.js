@@ -228,7 +228,9 @@ app.post("/",(req,res)=>{
 })
 
 
+
 app.get("/services",(req,res) => {
+    pool_servicios
 
 })
 
