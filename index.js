@@ -16,13 +16,16 @@ const pool_para_autenticar = pool.pool1
 const pool_usuarios_autenticados = pool.pool2
 const pool_servicios = pool.pool3
 
-// Función para obtener el Switch DPID
+// Variables importantes
+const controller_IP = "localhost"
+const uri = "/wm/device/"
 
-function obtenerDPID(mac){
-    const controller_IP = "localhost"
-    const uri = "/wm/device/"
 
-    let dpid = null
+// Prueba DPID
+app.get("/dpid",(req,res)=> {
+
+    const mac = req.query.mac
+    console.log("La MAC recibida fue:",mac)
 
     http.get('http://'+controller_IP+':8080'+uri+'?mac='+mac, res => {
         let data = ''
@@ -39,23 +42,17 @@ function obtenerDPID(mac){
             //console.log("\n\nJSON Data: ", resJSON[0])
             //console.log("\n\nAP: ", resJSON[0].attachmentPoint)
             //console.log("\n\nAP: ", resJSON[0].attachmentPoint[0].switchDPID)
-
             //if (resJSON.attachmentPoint !== undefined && resJSON.attachmentPoint[0].switchDPID !== undefined){
 
-                console.log("\n\nSwitchDPID: ", resJSON[0].attachmentPoint[0].switchDPID)
-                dpid = resJSON[0].attachmentPoint[0].switchDPID
-                return dpid
+            //console.log("\n\nSwitchDPID: ", resJSON[0].attachmentPoint[0].switchDPID)
+            dpid = resJSON[0].attachmentPoint[0].switchDPID
+            res.json({"MAC": mac , "dpid" : dpid})
             //}
         })
-    })
-}
-
-// Prueba DPID
-app.get("/dpid",(req,res)=> {
-
-    const mac = req.query.mac
-    console.log("La MAC recibida fue:",mac)
-    res.json({"MAC": mac , "dpid" : obtenerDPID(mac)})
+        res.on("error", (err) => {
+            console.log("Error: ", err)
+        })
+    }).end()
 })
 
 //Solo expondremos un endpoint para el reqerimiento 1
@@ -122,6 +119,9 @@ app.post("/",(req,res)=>{
                                                                         VALUES ("${req.body.mac}", "${req.body.mac}", 'computador')`,
                                         (err2,result2,fields2)=>{
                                             if(err2 == null){
+
+
+
                                                 pool_usuarios_autenticados.query(`INSERT INTO usuarios_autenticados.usuario_autenticado (idUsuario_Autenticado,Dispositivo_dispositivo_MAC,diferenciador,switch_MAC,IP,Facultad_facultad_ID,Rol_idROL) 
                                                                                 VALUES ("${req.body.user}","${req.body.mac}","0","00:00:00:00:01:01","${req.body.ip}","${result[0]["Facultad_idFacultad"]}","${result[0]["Rol_idRol"]}")`,
                                                 (err3,results3,fields3)=>{
