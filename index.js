@@ -336,7 +336,7 @@ app.post("/services",(req,res) => {
                                                     "status":"OK"
                                                 })
                                             }else{
-                                                res.status(401).json({
+                                                res.status(400).json({
                                                     "status":"error",
                                                     "msg":"los siguientes usuarios no existen y no seran ingresados al servicio",
                                                     "users":usuariosNoValidos
@@ -349,9 +349,6 @@ app.post("/services",(req,res) => {
                                             })
                                         }
                                     })
-                                    req.body.participantes.forEach(element => {
-                                        //Anadimos los participantes con el ID del servicio creado
-                                    });
                                 }else{
                                     res.status(401).json({
                                         "status":"error",
@@ -397,7 +394,75 @@ app.put("/services", (req,res) => {
 })
 
 app.delete("/services", (req,res) => {
-
+    if(req.body.user != null && req.body.password != null){
+        //validamos que sea el administrador
+        pool_para_autenticar.query(`SELECT * FROM usuarios_para_autenticar.usuario u
+                                                    inner join usuarios_para_autenticar.rol r on r.idROL = u.Rol_idRol
+                                                    inner join usuarios_para_autenticar.facultad f on f.idFacultad = u.Facultad_idFacultad
+                                                    where u.usuario = "${req.body.user}" and u.enable = 1;`,(err,result,fields) =>{
+            if(err == null){
+                if(result.length != 0){
+                    if(SHA512(req.body.password) == result[0]["password"]){
+                        //console.log(result[0])
+                        if(result[0]["nombreRol"] == "ADMIN"){
+                            //debe ingresar el nombre del servicio a eliminar
+                            if(req.body.servicio != null){
+                                //Obtenemos el ID del servicio que se desea eliminar
+                                pool_servicios.query(`SELECT * FROM servicios.servicio WHERE servicio.Nombre = "${req.body.servicio}"`,(err2,result2,fields2) => {
+                                    if(err2 == null){
+                                        //console.log(result2[0]["idServicio"])
+                                        //Eliminamos la relacion de un servicio
+                                        pool_servicios.query(`DELETE FROM servicios.servicio_has_participantes WHERE servicio_has_participantes.Servicio_idServicio = "${result2[0]["idServicio"]}"`,(err3,result3,fields3) =>{
+                                            if(err3 == null){
+                                                res.json({
+                                                    "status":"OK"
+                                                })
+                                            }else{
+                                                res.json({
+                                                    "status":"error",
+                                                    "msg":"No se pudo eliminar el servicio"
+                                                })
+                                            }
+                                        })
+                                    }else{
+                                        res.json({
+                                            "status":"error",
+                                            "msg":"No existe dicho servicio"
+                                        })
+                                    }
+                                })
+                            }else{
+                                res.status(401).json({
+                                    "status":"error",
+                                    "msg":"Debe ingresar el nombre del servicio que desea eliminar"
+                                })
+                            }
+                        }else{
+                            res.status(401).json({
+                                "status":"error",
+                                "msg":"El usuario ingresado no es un administrador"
+                            })
+                        }
+                    }else{
+                        res.status(401).json({
+                            "status":"error",
+                            "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+                        })
+                    }
+                }else{
+                    res.status(401).json({
+                        "status":"error",
+                        "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+                    })
+                }
+            }
+        })
+    }else{
+        res.status(401).json({
+            "status":"error",
+            "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+        })
+    }
 })
 /*
 app.post("/prueba",(req,res)=>{
