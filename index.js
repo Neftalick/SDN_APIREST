@@ -134,7 +134,7 @@ app.post("/",(req,res)=>{
                                                         //console.log("resJSON: ", body[0])
                                                         //console.log("true? : ", body[0].attachmentPoint[0] != null)
 
-                                                        if (body[0].attachmentPoint[0] != null){
+                                                        if (body[0] != null && body[0].attachmentPoint[0] != null){
 
                                                             let dpid = body[0].attachmentPoint[0].switchDPID
                                                             console.log("El DPID obtenido es: ", dpid)
