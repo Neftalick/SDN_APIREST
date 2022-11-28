@@ -131,13 +131,12 @@ app.post("/",(req,res)=>{
                                                         })
                                                     }
                                                     else {
-                                                        let resJSON = JSON.parse(body)
+                                                        //console.log("resJSON: ", body[0])
+                                                        //console.log("true? : ", body[0].attachmentPoint[0] != null)
 
-                                                        console.log("resJSON: ", resJSON)
+                                                        if (body[0].attachmentPoint[0] != null){
 
-                                                        if (resJSON.attachmentPoint != null){
-
-                                                            let dpid = resJSON[0].attachmentPoint[0].switchDPID
+                                                            let dpid = body[0].attachmentPoint[0].switchDPID
                                                             console.log("El DPID obtenido es: ", dpid)
 
                                                             pool_usuarios_autenticados.query(`INSERT INTO usuarios_autenticados.usuario_autenticado (idUsuario_Autenticado,Dispositivo_dispositivo_MAC,diferenciador,switch_MAC,IP,Facultad_facultad_ID,Rol_idROL) 
