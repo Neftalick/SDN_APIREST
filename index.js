@@ -5,7 +5,9 @@ const bodyParser = require("body-parser")
 const pool = require("./pools")
 const e = require('express')
 const SHA512 = require("js-sha512").sha512
-const http = require('http')
+// const http = require('http')
+const request = require("request")
+
 
 //Obtenemos constante a partir de variables de entorno para aumentar la seguridad del servicio y realizamos las congifuraciones correspondientes
 dotenv.config()
@@ -119,21 +121,27 @@ app.post("/",(req,res)=>{
                                             if(err2 == null){
 
                                                 // Se obtiene la DPID:
-                                                http.get('http://'+controller_IP+':8080/wm/device/?mac='+req.body.mac, response => {
-                                                    let data = ''
+                                                request('http://'+controller_IP+':8080/wm/device/?mac='+req.body.mac, {json: true}, (err, response, body)  => {
 
-                                                    // called when a data chunk is received.
-                                                    response.on('data', chunk => data += chunk )
+                                                    if (err) {
+                                                        console.log("Hubo un problema al conectarse con el controlador para pedir la DPID")
+                                                        res.json({
+                                                            "status":"error",
+                                                            "error": "No se pudo obtener la DPID del switch correspondiente a la MAC " + req.body.mac
+                                                        })
+                                                    }
+                                                    else {
+                                                        let resJSON = JSON.parse(body)
 
-                                                    // called when the complete response is received.
-                                                    response.on('end', () => {
-                                                        let resJSON = JSON.parse(data)
-                                                        if (resJSON.attachmentPoint !== undefined && resJSON.attachmentPoint[0].switchDPID !== undefined){
+                                                        console.log("resJSON: ", resJSON)
 
-                                                            dpid = resJSON[0].attachmentPoint[0].switchDPID
+                                                        if (resJSON.attachmentPoint != null){
+
+                                                            let dpid = resJSON[0].attachmentPoint[0].switchDPID
+                                                            console.log("El DPID obtenido es: ", dpid)
 
                                                             pool_usuarios_autenticados.query(`INSERT INTO usuarios_autenticados.usuario_autenticado (idUsuario_Autenticado,Dispositivo_dispositivo_MAC,diferenciador,switch_MAC,IP,Facultad_facultad_ID,Rol_idROL) 
-                                                                                VALUES ("${req.body.user}","${req.body.mac}","0","${dpid}","${req.body.ip}","${result[0]["Facultad_idFacultad"]}","${result[0]["Rol_idRol"]}")`,
+                                                                            VALUES ("${req.body.user}","${req.body.mac}","0","${dpid}","${req.body.ip}","${result[0]["Facultad_idFacultad"]}","${result[0]["Rol_idRol"]}")`,
                                                                 (err3,results3,fields3)=>{
                                                                     if(err3 == null){
                                                                         res.json({
@@ -154,11 +162,8 @@ app.post("/",(req,res)=>{
                                                                 "error": "No se pudo obtener la DPID del switch correspondiente a la MAC " + req.body.mac
                                                             })
                                                         }
-                                                    })
-                                                    response.on("error", (err) => {
-                                                        console.log("Error: ", err)
-                                                    })
-                                                }).end()
+                                                    }
+                                                })
                                             }else{
                                                 console.log("aqui")
                                                 res.json({
