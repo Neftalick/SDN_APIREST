@@ -209,8 +209,8 @@ app.post("/",(req,res)=>{
                 }
                 break
             case "sign out":
-                if(req.body.password!=null && req.body.mac!=null && req.body.ip!=null){
-                    pool_para_autenticar.query(`SELECT * FROM usuarios_para_autenticar.usuario where password = "${req.body.password}"`,(err,result,fields)=>{
+                if(req.body.user!=null && req.body.password!=null && req.body.mac!=null && req.body.ip!=null){
+                    pool_para_autenticar.query(`SELECT * FROM usuarios_para_autenticar.usuario where usuario = "${req.body.user}" and password = "${req.body.password}"`,(err,result,fields)=>{
                         if(err == null){
                             if(result.length != 0){
                                 pool_usuarios_autenticados.query(`SELECT FROM usuarios_autenticados.usuario_autenticado WHERE IP = "${req.body.ip}" and Dispositivo_dispositivo_MAC = "${req.body.mac}"`,(err10,result10,fields10)=>{
