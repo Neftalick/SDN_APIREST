@@ -301,7 +301,90 @@ app.post("/",(req,res)=>{
 
 
 app.get("/services",(req,res) => {
+    if(req.body.user != null && req.body.password != null){
+        //validamos que sea el administrador
+        pool_para_autenticar.query(`SELECT * FROM usuarios_para_autenticar.usuario u
+                                                    inner join usuarios_para_autenticar.rol r on r.idROL = u.Rol_idRol
+                                                    inner join usuarios_para_autenticar.facultad f on f.idFacultad = u.Facultad_idFacultad
+                                                    where u.usuario = "${req.body.user}" and u.enable = 1;`,(err,result,fields) =>{
+            if(err == null){
+                if(result.length != 0){
+                    if(SHA512(req.body.password) == result[0]["password"]){
+                        //console.log(result[0])
+                        if(result[0]["nombreRol"] == "ADMIN"){
+                            if(req.body.servicio != null){
+                                //lista el servicio
+                                pool_servicios.query(`Select * from servicios.servicio where Nombre="${req.body.servicio}" `, (err2,result2,fields2) => {
+                                    if(err2 == null){
+                                        //Lista los participantes
+                                        pool_servicios.query(`SELECT p.usuario FROM servicios.servicio s 
+                                        inner join servicios.servicio_has_participantes sp on sp.Servicio_idServicio = s.idServicio
+                                        inner join servicios.participantes p on sp.Participantes_idParticipantes = p.idParticipantes
+                                        where s.idServicio = "${result2[0]["idServicio"]}";`,(err3,result3,fields3) => {
 
+                                            if(err3 == null){
+                                                res.json({
+                                                    "status":"ok",
+                                                    "servicio":result2[0],
+                                                    "participantes":result3
+                                                })
+                                            }else{
+                                                res.status(400).json({
+                                                    "status":"error",
+                                                    "error":err3
+                                                })
+                                            }
+                                            
+                                        })
+                                    }else{
+                                        res.status(400).json({
+                                            "status":"error",
+                                            "msg":"Surgio un problema con la query, por favor vuelva a intentarlo más tarde"
+                                        })
+                                    }
+                                })
+                            }else{
+                                //lista todos los ervicios
+                                pool_servicios.query("Select * from servicios.servicio", (err2,result2,fields2) => {
+                                    if(err2 == null){
+                                        res.json({
+                                            "status":"ok",
+                                            "respuesta":result2
+                                        })
+                                    }else{
+                                        res.status(400).json({
+                                            "status":"error",
+                                            "msg":"Surgio un problema con la query, por favor vuelva a intentarlo más tarde"
+                                        })
+                                    }
+                                })
+                            }
+                        }else{
+                            res.status(401).json({
+                                "status":"error",
+                                "msg":"El usuario ingresado no es un administrador"
+                            })
+                        }
+                    }else{
+                        res.status(401).json({
+                            "status":"error",
+                            "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+                        })
+                    }
+                }else{
+                    res.status(401).json({
+                        "status":"error",
+                        "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+                    })
+                }
+            }
+        })
+    }else{
+        res.status(401).json({
+            "status":"error",
+            "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+        })
+    }
 })
 
 app.post("/services",(req,res) => {
@@ -394,7 +477,174 @@ app.post("/services",(req,res) => {
 })
 
 app.put("/services", (req,res) => {
+    //Veremos los parametros necesarios
+    //Se debe identificar el administrados para anadir servicios
+    if(req.body.user != null && req.body.password != null  && req.body.action != null && req.body.servicio){
+        //validamos que sea el administrador
+        pool_para_autenticar.query(`SELECT * FROM usuarios_para_autenticar.usuario u
+                                                    inner join usuarios_para_autenticar.rol r on r.idROL = u.Rol_idRol
+                                                    inner join usuarios_para_autenticar.facultad f on f.idFacultad = u.Facultad_idFacultad
+                                                    where u.usuario = "${req.body.user}" and u.enable = 1;`,(err,result,fields) =>{
+            if(err == null){
+                if(result.length != 0){
+                    if(SHA512(req.body.password) == result[0]["password"]){
+                        //console.log(result[0])
+                        if(result[0]["nombreRol"] == "ADMIN"){
+                            switch (req.body.action){
+                                case "modificar":
+                                    pool_servicios.query(`SELECT idServicio from servicio where Nombre = "${req.body.servicio}"`,(err,result,fields) =>{
+                                        id = result[0]["idServicio"]
+                                        if(err == null){                                        
+                                                    if(req.body.protocolo != null){
+                                                        pool_servicios.query(`UPDATE servicio SET Protocolo = "${req.body.protocolo}" WHERE (idServicio = '${id}');`,(err,result) =>{
+                                                            if(err == null){
+                                                                res.json({
+                                                                    "status":"ok"
+                                                                })
+                                                            }else{
+                                                                res.json({
+                                                                    "status":"error",
+                                                                    "error":err
+                                                                })
+                                                            }
+                                                        })
+                                                    }
+                                                    if(req.body.puerto != null){
+                                                        pool_servicios.query(`UPDATE servicio SET Puerto = "${req.body.puerto}" WHERE (idServicio = '${id}');`,(err,result) =>{
+                                                            if(err == null){
+                                                                res.json({
+                                                                    "status":"ok"
+                                                                })
+                                                            }else{
+                                                                res.json({
+                                                                    "status":"error",
+                                                                    "error":err
+                                                                })
+                                                            }
+                                                        })
 
+                                                    }
+                                                    if(req.body.ip != null){
+                                                        pool_servicios.query(`UPDATE servicio SET IP = "${req.body.ip}" WHERE (idServicio = '${id}');`,(err,result) =>{
+                                                            if(err == null){
+                                                                res.json({
+                                                                    "status":"ok"
+                                                                })
+                                                            }else{
+                                                                res.json({
+                                                                    "status":"error",
+                                                                    "error":err
+                                                                })
+                                                            }
+                                                        })
+                                                    }
+                                                    if(req.body.mac != null){
+                                                        pool_servicios.query(`UPDATE servicio SET MAC = "${req.body.mac}" WHERE (idServicio = '${id}');`,(err,result) =>{
+                                                            if(err == null){
+                                                                res.json({
+                                                                    "status":"ok"
+                                                                })
+                                                            }else{
+                                                                res.json({
+                                                                    "status":"error",
+                                                                    "error":err
+                                                                })
+                                                            }
+                                                        })
+                                                    }
+                                                    else{
+                                                        res.status(401).json({
+                                                            "msg":"error",
+                                                            "error":"Establesca el parametro que desea modificar del servicio"
+                                                        })
+                                                    }                                    
+                                        }else{
+                                            res.status(401).json({
+                                                "status":"error",
+                                                "msg":"error al crear el servicio validar todos los parametros"
+                                            })
+                                        }
+                                    })
+                                    break
+                                case "agregar participante":
+                                    if(req.body.participantes.length != 0){
+                                        //Creamos los servicios
+                                        pool_servicios.query(`SELECT idServicio from servicio where Nombre="${req.body.servicio}"`,(err,result,fields) =>{
+                                            if(err == null){
+                                                console.log(result[0])
+                                                id = result[0]["idServicio"]
+                                                console.log(id)
+                                                const usuariosNoValidos = []
+                                                req.body.participantes.forEach(usuarios => {
+                                                    //usuarios["user"]
+                                                    pool_servicios.query(`SELECT idParticipantes FROM servicios.participantes WHERE servicios.participantes.usuario = "${usuarios["user"]}"`,(err2,result2,fields2) =>{
+                                                        console.log(result2)
+                                                        if(result != null){
+                                                            pool_servicios.query(`INSERT INTO servicios.servicio_has_participantes (Servicio_idServicio,Participantes_idParticipantes) VALUES ("${id}","${result2[0]["idParticipantes"]}")`)
+                                                        }else{
+                                                            usuariosNoValidos.push(usuarios["user"])
+                                                        }
+                                                    })
+                                                })
+                                                if(usuariosNoValidos.length == 0){
+                                                    res.json({
+                                                        "status":"OK"
+                                                    })
+                                                }else{
+                                                    res.status(400).json({
+                                                        "status":"error",
+                                                        "msg":"los siguientes usuarios no existen y no seran ingresados al servicio",
+                                                        "users":usuariosNoValidos
+                                                    })
+                                                }
+                                                
+                                            }else{
+                                                res.json({
+                                                    "msg":"error",
+                                                    "error":err
+                                                })
+                                            }
+                                        })
+                                    }else{
+                                        res.status(401).json({
+                                            "status":"error",
+                                            "msg":"Los participantes no debe estar vacio"
+                                        })
+                                    }
+                                    break
+                                default :
+                                    res.json({
+                                        "status":"error",
+                                        "error":"la accion establecida no esta disponible"
+                                    })
+                                    break
+                            }
+                        }else{
+                            res.status(401).json({
+                                "status":"error",
+                                "msg":"El usuario ingresado no es un administrador"
+                            })
+                        }
+                    }else{
+                        res.status(401).json({
+                            "status":"error",
+                            "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+                        })
+                    }
+                }else{
+                    res.status(401).json({
+                        "status":"error",
+                        "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+                    })
+                }
+            }
+        })
+    }else{
+        res.status(401).json({
+            "status":"error",
+            "msg":"Usuario o contraseña incorrecta debe pertenecer al administrados"
+        })
+    }
 })
 
 app.delete("/services", (req,res) => {
